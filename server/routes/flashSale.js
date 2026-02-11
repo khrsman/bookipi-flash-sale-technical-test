@@ -7,8 +7,11 @@ const {
   validateFlashSaleId 
 } = require('../middleware/validation');
 
+
 // Create new flash sale
 router.post('/create', validateCreateFlashSale, flashSaleController.createFlashSale);
 
+// Get flash sale status (no id needed)
+router.get('/status', flashSaleController.getStatus);
 
 module.exports = router;
