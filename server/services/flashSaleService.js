@@ -38,13 +38,17 @@ class FlashSaleService {
    */
   async getFlashSaleStatus() {
     const flashSale = await FlashSale.findOne();
+    
     if (!flashSale) {
       throw new Error('Flash sale not found');
     }
+
     const now = new Date();
     const redisClient = getRedisClient();
     const stockKey = `flash_sale:${flashSale._id}:stock`;
     const stockRemaining = parseInt(await redisClient.get(stockKey)) || 0;
+
+    // Determine status based on time and stock
     let status;
     if (now < new Date(flashSale.startTime)) {
       status = 'upcoming';
@@ -55,6 +59,7 @@ class FlashSaleService {
     } else {
       status = 'sold_out';
     }
+
     return {
       id: flashSale._id.toString(),
       productName: flashSale.productName,
@@ -66,6 +71,64 @@ class FlashSaleService {
     };
   }
 
+  /**
+   * Attempt purchase using atomic Lua script (single product)
+   * Returns: -1 (already purchased), 0 (sold out), 1 (success)
+   */
+  async attemptPurchase(userIdentifier) {
+    const flashSale = await FlashSale.findOne();
+    
+    if (!flashSale) {
+      throw new Error('Flash sale not found');
+    }
+
+    const now = new Date();
+    
+    if (now < new Date(flashSale.startTime)) {
+      return { success: false, message: 'Sale has not started yet' };
+    }
+    
+    if (now > new Date(flashSale.endTime)) {
+      return { success: false, message: 'Sale has ended' };
+    }
+
+    // Execute atomic Lua script
+    const redisClient = getRedisClient();
+    const stockKey = `flash_sale:${flashSale._id}:stock`;
+    const usersKey = `flash_sale:${flashSale._id}:users`;
+    
+    const result = await redisClient.eval(PURCHASE_SCRIPT, {
+      keys: [stockKey, usersKey],
+      arguments: [userIdentifier, Date.now().toString()]
+    });
+
+    if (result === -1) {
+      return { success: false, message: 'You have already purchased this item' };
+    }
+    
+    if (result === 0) {
+      return { success: false, message: 'Item sold out' };
+    }
+    
+    // Save to MongoDB (fire-and-forget)
+    const purchase = new Purchase({
+      flashSaleId: flashSale._id,
+      userIdentifier,
+      purchasedAt: new Date()
+    });
+    
+    purchase.save().catch(err => {
+      console.error('Failed to save purchase to MongoDB:', err);
+    });
+
+    return {
+      success: true,
+      message: 'Purchase successful!',
+      purchaseId: purchase._id.toString()
+    };
+  }
+
+  
 }
 
 module.exports = new FlashSaleService();
