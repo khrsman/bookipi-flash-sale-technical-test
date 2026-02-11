@@ -41,3 +41,53 @@ exports.validateCreateFlashSale = (req, res, next) => {
 
   next();
 };
+
+/**
+ * Validate user identifier
+ */
+exports.validateUserIdentifier = (req, res, next) => {
+  const { userIdentifier } = req.body;
+
+  // Check if exists and not empty
+  if (!userIdentifier || userIdentifier.trim() === '') {
+    return res.status(400).json({
+      success: false,
+      message: 'User identifier is required'
+    });
+  }
+
+  // Check minimum length
+  if (userIdentifier.trim().length < 3) {
+    return res.status(400).json({
+      success: false,
+      message: 'User identifier must be at least 3 characters'
+    });
+  }
+
+  // Validate format (alphanumeric, email, or username)
+  const validFormat = /^[a-zA-Z0-9@._-]+$/.test(userIdentifier);
+  if (!validFormat) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid user identifier format'
+    });
+  }
+
+  next();
+};
+
+/**
+ * Validate MongoDB ObjectId format
+ */
+exports.validateFlashSaleId = (req, res, next) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid flash sale ID format'
+    });
+  }
+
+  next();
+};
