@@ -16,11 +16,25 @@ exports.createFlashSale = async (req, res) => {
  * Get flash sale status (single product)
  */
 exports.getStatus = async (req, res) => {
-  try {
+  try {    
     const status = await flashSaleService.getFlashSaleStatus();
     res.json({ success: true, data: status });
   } catch (error) {
     res.status(404).json({ success: false, message: error.message });
   }
 };
+
+/**
+ * Attempt purchase (single product)
+ */
+exports.attemptPurchase = async (req, res) => {
+  try {
+    const { userIdentifier } = req.body;
+    const result = await flashSaleService.attemptPurchase(userIdentifier);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
 
