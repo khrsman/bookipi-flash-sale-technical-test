@@ -128,7 +128,26 @@ class FlashSaleService {
     };
   }
 
-  
+  /**
+   * Check if user already purchased (single product)
+   */
+  async checkUserPurchase(userIdentifier) {
+    const flashSale = await FlashSale.findOne();
+    
+    if (!flashSale) {
+      throw new Error('Flash sale not found');
+    }
+
+    const purchase = await Purchase.findOne({
+      flashSaleId: flashSale._id,
+      userIdentifier
+    });
+
+    return {
+      hasPurchased: !!purchase,
+      purchaseTime: purchase?.purchasedAt || null
+    };
+  }
 }
 
 module.exports = new FlashSaleService();
