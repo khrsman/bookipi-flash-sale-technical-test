@@ -15,4 +15,7 @@ router.get('/status', flashSaleController.getStatus);
 // Attempt purchase (no id needed)
 router.post('/purchase', validateUserIdentifier, flashSaleController.attemptPurchase);
 
+// Check if user purchased (no id needed)
+router.get('/check-purchase/:userIdentifier', flashSaleController.checkPurchase);
+
 module.exports = router;
