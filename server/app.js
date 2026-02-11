@@ -15,6 +15,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// API Routes
+const flashSaleRoutes = require('./routes/flashSale');
+app.use('/api/flash-sale', flashSaleRoutes);
+
 // Health check route
 app.get('/health', (req, res) => {
   res.json({ status: 'OK' });
