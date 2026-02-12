@@ -1,0 +1,13 @@
+{
+  "name": "flash-sale-stress-tests",
+  "version": "1.0.0",
+  "description": "Load testing for flash sale system",
+  "scripts": {
+    "test": "artillery run artillery.yml",
+    "test:quick": "artillery quick --duration 60 --rate 10 http://localhost:5000/health",
+    "test:report": "artillery run artillery.yml --output report.json && artillery report report.json"
+  },
+  "devDependencies": {
+    "artillery": "^2.0.0"
+  }
+}
