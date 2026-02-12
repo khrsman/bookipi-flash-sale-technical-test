@@ -1,10 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const flashSaleController = require('../controllers/flashSaleController');
-const { 
-  validateCreateFlashSale, 
-  validateUserIdentifier
-} = require('../middleware/validation');
+const { validateCreateFlashSale, validateUserIdentifier } = require('../middleware/validation');
 
 // Create new flash sale
 router.post('/create', validateCreateFlashSale, flashSaleController.createFlashSale);

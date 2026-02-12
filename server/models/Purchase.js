@@ -9,17 +9,17 @@ const purchaseSchema = new mongoose.Schema({
   flashSaleId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'FlashSale',
-    required: [true, 'Flash sale ID is required']
+    required: [true, 'Flash sale ID is required'],
   },
   userIdentifier: {
     type: String,
     required: [true, 'User identifier is required'],
-    trim: true
+    trim: true,
   },
   purchasedAt: {
     type: Date,
-    default: Date.now
-  }
+    default: Date.now,
+  },
 });
 
 /**

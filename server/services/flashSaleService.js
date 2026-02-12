@@ -7,7 +7,6 @@ const { PURCHASE_SCRIPT } = require('../utils/luaScripts');
  * FlashSaleService - Business logic for flash sale operations
  */
 class FlashSaleService {
-  
   /**
    * Create new flash sale and initialize Redis stock counter
    */
@@ -20,7 +19,7 @@ class FlashSaleService {
       remainingStock: totalStock,
       startTime,
       endTime,
-      status: 'upcoming'
+      status: 'upcoming',
     });
 
     await flashSale.save();
@@ -38,7 +37,7 @@ class FlashSaleService {
    */
   async getFlashSaleStatus() {
     const flashSale = await FlashSale.findOne();
-    
+
     if (!flashSale) {
       throw new Error('Flash sale not found');
     }
@@ -67,7 +66,7 @@ class FlashSaleService {
       stockRemaining,
       totalStock: flashSale.totalStock,
       startTime: flashSale.startTime,
-      endTime: flashSale.endTime
+      endTime: flashSale.endTime,
     };
   }
 
@@ -77,17 +76,17 @@ class FlashSaleService {
    */
   async attemptPurchase(userIdentifier) {
     const flashSale = await FlashSale.findOne();
-    
+
     if (!flashSale) {
       throw new Error('Flash sale not found');
     }
 
     const now = new Date();
-    
+
     if (now < new Date(flashSale.startTime)) {
       return { success: false, message: 'Sale has not started yet' };
     }
-    
+
     if (now > new Date(flashSale.endTime)) {
       return { success: false, message: 'Sale has ended' };
     }
@@ -96,35 +95,35 @@ class FlashSaleService {
     const redisClient = getRedisClient();
     const stockKey = `flash_sale:${flashSale._id}:stock`;
     const usersKey = `flash_sale:${flashSale._id}:users`;
-    
+
     const result = await redisClient.eval(PURCHASE_SCRIPT, {
       keys: [stockKey, usersKey],
-      arguments: [userIdentifier, Date.now().toString()]
+      arguments: [userIdentifier, Date.now().toString()],
     });
 
     if (result === -1) {
       return { success: false, message: 'You have already purchased this item' };
     }
-    
+
     if (result === 0) {
       return { success: false, message: 'Item sold out' };
     }
-    
+
     // Save to MongoDB (fire-and-forget)
     const purchase = new Purchase({
       flashSaleId: flashSale._id,
       userIdentifier,
-      purchasedAt: new Date()
+      purchasedAt: new Date(),
     });
-    
-    purchase.save().catch(err => {
+
+    purchase.save().catch((err) => {
       console.error('Failed to save purchase to MongoDB:', err);
     });
 
     return {
       success: true,
       message: 'Purchase successful!',
-      purchaseId: purchase._id.toString()
+      purchaseId: purchase._id.toString(),
     };
   }
 
@@ -133,19 +132,19 @@ class FlashSaleService {
    */
   async checkUserPurchase(userIdentifier) {
     const flashSale = await FlashSale.findOne();
-    
+
     if (!flashSale) {
       throw new Error('Flash sale not found');
     }
 
     const purchase = await Purchase.findOne({
       flashSaleId: flashSale._id,
-      userIdentifier
+      userIdentifier,
     });
 
     return {
       hasPurchased: !!purchase,
-      purchaseTime: purchase?.purchasedAt || null
+      purchaseTime: purchase?.purchasedAt || null,
     };
   }
 }

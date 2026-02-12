@@ -9,5 +9,5 @@ const Purchase = require('./Purchase');
 
 module.exports = {
   FlashSale,
-  Purchase
+  Purchase,
 };
