@@ -27,6 +27,24 @@ async function connectRedis() {
 }
 
 /**
+ * Initialize Redis (for testing purposes)
+ * Alias for connectRedis to maintain consistency
+ */
+async function initRedis() {
+  return connectRedis();
+}
+
+/**
+ * Close Redis connection (for testing cleanup)
+ */
+async function closeRedis() {
+  if (redisClient && redisClient.isOpen) {
+    await redisClient.quit();
+    console.log('✅ Redis connection closed');
+  }
+}
+
+/**
  * Get Redis client instance
  */
 function getRedisClient() {
@@ -35,5 +53,7 @@ function getRedisClient() {
 
 module.exports = {
   connectRedis,
+  initRedis,
+  closeRedis,
   getRedisClient,
 };
