@@ -241,50 +241,56 @@ const FlashSaleCard = () => {
       </div>
 
       {/* 3. Stock Display with progress bar */}
-      <div className="mb-4 sm:mb-6 bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-200">
-        <div>
-          <div className="flex justify-between items-center mb-3">
-            <p className="text-gray-600 text-xs sm:text-sm font-semibold uppercase tracking-wider">
-              Items Sold
-            </p>
-          </div>
-
-          {/* Progress Bar */}
-          <div className="w-full bg-gray-200 rounded-full h-6 sm:h-8 overflow-hidden shadow-inner">
-            <div
-              className="bg-orange-600 h-full flex items-center justify-center transition-all duration-500 ease-out"
-              style={{ width: `${((totalStock - stockRemaining) / totalStock) * 100}%` }}
-            >
-              <span className="text-white text-xs sm:text-sm font-bold px-2">
-                {Math.round(((totalStock - stockRemaining) / totalStock) * 100)}%
-              </span>
+      {status === 'active' && (
+        <div className="mb-4 sm:mb-6 bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-200">
+          <div>
+            <div className="flex justify-between items-center mb-3">
+              <p className="text-gray-600 text-xs sm:text-sm font-semibold uppercase tracking-wider">
+                Items Sold
+              </p>
+              <p className="text-lg sm:text-xl font-bold text-green-600">
+                {totalStock - stockRemaining} / {totalStock}
+              </p>
             </div>
-          </div>
-        </div>
 
-        {/* Low stock warning */}
-        {stockRemaining < 20 && stockRemaining > 0 && (
-          <div className="mt-3 sm:mt-4 bg-red-50 border-2 border-red-400 text-red-700 px-3 sm:px-4 py-2 sm:py-3 rounded-lg">
-            <div className="flex items-center justify-center gap-1 sm:gap-2">
-              <svg
-                className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0"
-                fill="currentColor"
-                viewBox="0 0 20 20"
+            {/* Progress Bar */}
+            <div className="w-full bg-gray-200 rounded-full h-6 sm:h-8 overflow-hidden shadow-inner relative">
+              <div
+                className="bg-orange-600 h-full transition-all duration-500 ease-out"
+                style={{ width: `${((totalStock - stockRemaining) / totalStock) * 100}%` }}
+              ></div>
+              <span
+                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-green-600 text-xs sm:text-sm font-bold px-2 pointer-events-none select-none"
+                style={{ zIndex: 2 }}
               >
-                <path
-                  fillRule="evenodd"
-                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              <span className="font-bold text-xs sm:text-sm">
-                Only {stockRemaining} left! Hurry up!
+                {Math.round(((totalStock - stockRemaining) / totalStock) * 100)} %
               </span>
             </div>
           </div>
-        )}
-      </div>
 
+          {/* Low stock warning */}
+          {stockRemaining < 20 && stockRemaining > 0 && (
+            <div className="mt-3 sm:mt-4 bg-red-50 border-2 border-red-400 text-red-700 px-3 sm:px-4 py-2 sm:py-3 rounded-lg">
+              <div className="flex items-center justify-center gap-1 sm:gap-2">
+                <svg
+                  className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span className="font-bold text-xs sm:text-sm">
+                  Only {stockRemaining} left! Hurry up!
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
       {/* 4. User Input with modern styling */}
       {status === 'active' && !hasPurchased && (
         <div className="mt-4 sm:mt-6 mb-3 sm:mb-4">
