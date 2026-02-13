@@ -59,6 +59,31 @@ redis.call('HSET', KEYS[2], ARGV[1], ARGV[2])
 return 1  -- Success: Purchase completed
 `;
 
+/**
+ * ROLLBACK_SCRIPT - Rollback purchase if MongoDB save fails
+ *
+ * This script reverses a successful purchase when downstream operations fail.
+ * It's critical for maintaining data consistency between Redis and MongoDB.
+ *
+ * KEYS[1]: Stock counter key - Format: "flash_sale:{flashSaleId}:stock"
+ * KEYS[2]: Users hash key - Format: "flash_sale:{flashSaleId}:users"
+ * ARGV[1]: userIdentifier - User's email or username to remove
+ *
+ * RETURN CODES:
+ * 1 : Rollback successful (stock incremented, user removed)
+ */
+const ROLLBACK_SCRIPT = `
+-- Increment stock back (undo the decrement)
+redis.call('INCR', KEYS[1])
+
+-- Remove user from purchase records
+redis.call('HDEL', KEYS[2], ARGV[1])
+
+-- Return success
+return 1
+`;
+
 module.exports = {
   PURCHASE_SCRIPT,
+  ROLLBACK_SCRIPT,
 };
