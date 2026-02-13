@@ -10,6 +10,8 @@ const FlashSaleCard = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [hasPurchased, setHasPurchased] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Initialize userIdentifier from localStorage
   useEffect(() => {
@@ -42,7 +44,16 @@ const FlashSaleCard = () => {
     try {
       const response = await flashSaleAPI.getStatus();
       setSaleData(response.data.data);
-    } catch (error) {
+      setError(null);
+      setIsLoading(false);
+    } catch (error: any) {
+      // Handle 404 as "no flash sale available"
+      if (error.response?.status === 404) {
+        setError('No flash sale available at the moment');
+      } else {
+        setError('Failed to load flash sale data');
+      }
+      setIsLoading(false);
       console.error('Error fetching status:', error);
     }
   };
@@ -86,11 +97,38 @@ const FlashSaleCard = () => {
   };
 
   // Loading State
-  if (!saleData) {
+  if (isLoading) {
     return (
       <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg p-6">
         <div className="text-center text-gray-600">
           <div className="animate-pulse">Loading flash sale...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error State (No flash sale available)
+  if (error || !saleData) {
+    return (
+      <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg p-6">
+        <div className="text-center">
+          <div className="text-6xl mb-4">🛍️</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            {error || 'No Flash Sale Available'}
+          </h2>
+          <p className="text-gray-600 mb-4">
+            There is currently no active flash sale. Please check back later!
+          </p>
+          <button
+            onClick={() => {
+              setIsLoading(true);
+              setError(null);
+              fetchStatus();
+            }}
+            className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Refresh
+          </button>
         </div>
       </div>
     );
