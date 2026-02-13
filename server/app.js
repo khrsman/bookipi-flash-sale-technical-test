@@ -17,7 +17,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // API Routes
 const flashSaleRoutes = require('./routes/flashSale');
+const adminRoutes = require('./routes/admin');
 app.use('/api/flash-sale', flashSaleRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Health check route
 app.get('/health', (req, res) => {

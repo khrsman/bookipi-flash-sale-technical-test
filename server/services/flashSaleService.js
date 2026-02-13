@@ -10,8 +10,17 @@ const { PURCHASE_SCRIPT, ROLLBACK_SCRIPT } = require('../utils/luaScripts');
 class FlashSaleService {
   /**
    * Create new flash sale and initialize Redis stock counter
+   * Only one flash sale is allowed at a time
    */
   async createFlashSale(data) {
+    // Check if there's already an existing flash sale
+    const existingFlashSale = await FlashSale.findOne();
+    if (existingFlashSale) {
+      throw new Error(
+        'A flash sale already exists. Please reset all data before creating a new one.'
+      );
+    }
+
     const { productName, totalStock, startTime, endTime } = data;
 
     const flashSale = new FlashSale({
