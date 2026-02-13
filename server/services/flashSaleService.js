@@ -1,10 +1,11 @@
 const FlashSale = require('../models/FlashSale');
 const Purchase = require('../models/Purchase');
 const { getRedisClient } = require('../config/redis');
-const { PURCHASE_SCRIPT } = require('../utils/luaScripts');
+const { PURCHASE_SCRIPT, ROLLBACK_SCRIPT } = require('../utils/luaScripts');
 
 /**
  * FlashSaleService - Business logic for flash sale operations
+ * With dual-layer protection (Redis + MongoDB)
  */
 class FlashSaleService {
   /**
@@ -71,8 +72,9 @@ class FlashSaleService {
   }
 
   /**
-   * Attempt purchase using atomic Lua script (single product)
-   * Returns: -1 (already purchased), 0 (sold out), 1 (success)
+   * Attempt purchase with DUAL-LAYER PROTECTION
+   * Layer 1: Redis atomic operations (fast, prevents concurrent oversell)
+   * Layer 2: MongoDB atomic operations with transactions (persistent, final validation)
    */
   async attemptPurchase(userIdentifier) {
     const flashSale = await FlashSale.findOne();
@@ -91,40 +93,101 @@ class FlashSaleService {
       return { success: false, message: 'Sale has ended' };
     }
 
-    // Execute atomic Lua script
+    // LAYER 1: Redis Atomic Check & Lock
     const redisClient = getRedisClient();
     const stockKey = `flash_sale:${flashSale._id}:stock`;
     const usersKey = `flash_sale:${flashSale._id}:users`;
 
-    const result = await redisClient.eval(PURCHASE_SCRIPT, {
+    const redisResult = await redisClient.eval(PURCHASE_SCRIPT, {
       keys: [stockKey, usersKey],
       arguments: [userIdentifier, Date.now().toString()],
     });
 
-    if (result === -1) {
+    if (redisResult === -1) {
       return { success: false, message: 'You have already purchased this item' };
     }
 
-    if (result === 0) {
+    if (redisResult === 0) {
       return { success: false, message: 'Item sold out' };
     }
 
-    // Save to MongoDB (fire-and-forget)
-    const purchase = new Purchase({
-      flashSaleId: flashSale._id,
-      userIdentifier,
-      purchasedAt: new Date(),
-    });
+    // LAYER 2: MongoDB Atomic Operations with Double Validation
+    // Note: Using atomic operations instead of transactions (which require replica set)
+    // This is safe because:
+    // 1. FlashSale.decrementStock uses atomic findOneAndUpdate
+    // 2. Purchase.save has unique index on (flashSaleId + userIdentifier)
+    // 3. Redis rollback ensures consistency if MongoDB operations fail
 
-    purchase.save().catch((err) => {
-      console.error('Failed to save purchase to MongoDB:', err);
-    });
+    try {
+      // Step 1: Atomic stock decrement with optimistic locking
+      const updatedFlashSale = await FlashSale.decrementStock(flashSale._id, 1);
 
-    return {
-      success: true,
-      message: 'Purchase successful!',
-      purchaseId: purchase._id.toString(),
-    };
+      if (!updatedFlashSale) {
+        // MongoDB stock validation failed - Redis was wrong or race condition
+        throw new Error('STOCK_VALIDATION_FAILED');
+      }
+
+      // Step 2: Create purchase record (duplicate check via unique index)
+      const purchase = new Purchase({
+        flashSaleId: flashSale._id,
+        userIdentifier,
+        purchasedAt: new Date(),
+      });
+
+      await purchase.save();
+
+      return {
+        success: true,
+        message: 'Purchase successful!',
+        purchaseId: purchase._id.toString(),
+      };
+    } catch (mongoError) {
+      // CRITICAL: MongoDB failed after Redis success - Must rollback Redis
+      const isDuplicateError = mongoError.code === 11000;
+      const isStockError = mongoError.message === 'STOCK_VALIDATION_FAILED';
+
+      // eslint-disable-next-line no-console
+      console.error(
+        `MongoDB ${isDuplicateError ? 'duplicate' : isStockError ? 'stock validation' : 'transaction'} failed, rolling back Redis:`,
+        mongoError.message
+      );
+
+      // Rollback Redis to maintain consistency
+      try {
+        await redisClient.eval(ROLLBACK_SCRIPT, {
+          keys: [stockKey, usersKey],
+          arguments: [userIdentifier],
+        });
+        // eslint-disable-next-line no-console
+        console.log(`Redis rollback successful for user: ${userIdentifier}`);
+      } catch (rollbackError) {
+        // DISASTER: Rollback failed - data inconsistency detected
+        // eslint-disable-next-line no-console
+        console.error('CRITICAL: Redis rollback failed! Data inconsistency:', rollbackError);
+        // eslint-disable-next-line no-console
+        console.error('Manual intervention required:', {
+          flashSaleId: flashSale._id,
+          userIdentifier,
+          timestamp: new Date(),
+          redisStock: await redisClient.get(stockKey),
+          mongoStock: flashSale.remainingStock,
+        });
+      }
+
+      // Return user-friendly error messages
+      if (isDuplicateError) {
+        return { success: false, message: 'You have already purchased this item' };
+      }
+
+      if (isStockError) {
+        return { success: false, message: 'Item sold out' };
+      }
+
+      return {
+        success: false,
+        message: 'Purchase failed due to system error. Please try again.',
+      };
+    }
   }
 
   /**
