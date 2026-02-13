@@ -172,7 +172,7 @@ const FlashSaleCard = () => {
     );
   }
 
-  const { productName, status, stockRemaining, totalStock, startTime, endTime } = saleData;
+  const { productName, status, stockRemaining, totalStock } = saleData;
 
   // Determine status color and style
   const getStatusStyle = () => {
