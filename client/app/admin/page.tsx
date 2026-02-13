@@ -31,7 +31,8 @@ export default function AdminPage() {
         setFlashSales(response.data.data.flashSales);
         setTotalPurchases(response.data.data.totalPurchases);
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Error loading flash sales:', error);
       // Silently fail on initial load
     }
   };
