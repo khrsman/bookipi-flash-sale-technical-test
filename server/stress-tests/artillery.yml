@@ -1,0 +1,64 @@
+config:
+  target: 'http://localhost:5000'
+  phases:
+    - duration: 60
+      arrivalRate: 10
+      name: 'Warm up - 10 users/sec'
+    - duration: 120
+      arrivalRate: 50
+      name: 'Ramp up - 50 users/sec'
+    - duration: 180
+      arrivalRate: 100
+      name: 'Peak load - 100 users/sec'
+    - duration: 60
+      arrivalRate: 200
+      name: 'Stress test - 200 users/sec'
+  processor: './processors.js'
+
+scenarios:
+  # Scenario 1: Check flash sale status (40% of traffic)
+  - name: 'Check Status'
+    weight: 40
+    flow:
+      - get:
+          url: '/api/flash-sale/status'
+          headers:
+            Content-Type: 'application/json'
+          capture:
+            - json: '$.data.status'
+              as: 'saleStatus'
+          expect:
+            - statusCode: 200
+            - contentType: json
+            - hasProperty: data
+
+  # Scenario 2: Attempt purchase (50% of traffic)
+  - name: 'Attempt Purchase'
+    weight: 50
+    flow:
+      - post:
+          url: '/api/flash-sale/purchase'
+          headers:
+            Content-Type: 'application/json'
+          json:
+            userIdentifier: 'user_{{ $randomNumber() }}@test.com'
+          expect:
+            - statusCode: 200
+            - contentType: json
+          capture:
+            - json: '$.success'
+              as: 'purchaseSuccess'
+            - json: '$.message'
+              as: 'purchaseMessage'
+
+  # Scenario 3: Check user purchase (10% of traffic)
+  - name: 'Check Purchase'
+    weight: 10
+    flow:
+      - get:
+          url: '/api/flash-sale/check-purchase/user_test@example.com'
+          headers:
+            Content-Type: 'application/json'
+          expect:
+            - statusCode: 200
+            - contentType: json

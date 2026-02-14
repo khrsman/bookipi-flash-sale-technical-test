@@ -16,7 +16,7 @@ exports.createFlashSale = async (req, res) => {
  * Get flash sale status (single product)
  */
 exports.getStatus = async (req, res) => {
-  try {    
+  try {
     const status = await flashSaleService.getFlashSaleStatus();
     res.json({ success: true, data: status });
   } catch (error) {

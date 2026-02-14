@@ -1,6 +1,6 @@
 /**
  * Redis Lua Scripts for Atomic Operations
- * 
+ *
  * WHY LUA SCRIPTS ARE NECESSARY:
  * Redis Lua scripts execute atomically, meaning all operations within the script
  * run as a single unit without interruption from other clients. This is crucial
@@ -9,24 +9,24 @@
 
 /**
  * PURCHASE_SCRIPT - Atomic purchase operation
- * 
+ *
  * This Lua script ensures that inventory checks, stock decrements, and
  * user purchase records happen atomically in a single Redis operation.
- * 
+ *
  * KEYS[1]: Stock counter key - Format: "flash_sale:{flashSaleId}:stock"
  *          Stores the current available stock count
- * 
+ *
  * KEYS[2]: Users hash key - Format: "flash_sale:{flashSaleId}:users"
  *          Hash map storing user purchases: {userIdentifier: timestamp}
- * 
+ *
  * ARGV[1]: userIdentifier - User's email or username
  * ARGV[2]: timestamp - Current timestamp when purchase was attempted
- * 
+ *
  * RETURN CODES:
  * -1 : User has already purchased this item (duplicate purchase attempt)
  *  0 : Item is sold out (no stock remaining)
  *  1 : Purchase successful (stock decremented, user recorded)
- * 
+ *
  */
 
 const PURCHASE_SCRIPT = `
@@ -59,7 +59,31 @@ redis.call('HSET', KEYS[2], ARGV[1], ARGV[2])
 return 1  -- Success: Purchase completed
 `;
 
+/**
+ * ROLLBACK_SCRIPT - Rollback purchase if MongoDB save fails
+ *
+ * This script reverses a successful purchase when downstream operations fail.
+ * It's critical for maintaining data consistency between Redis and MongoDB.
+ *
+ * KEYS[1]: Stock counter key - Format: "flash_sale:{flashSaleId}:stock"
+ * KEYS[2]: Users hash key - Format: "flash_sale:{flashSaleId}:users"
+ * ARGV[1]: userIdentifier - User's email or username to remove
+ *
+ * RETURN CODES:
+ * 1 : Rollback successful (stock incremented, user removed)
+ */
+const ROLLBACK_SCRIPT = `
+-- Increment stock back (undo the decrement)
+redis.call('INCR', KEYS[1])
+
+-- Remove user from purchase records
+redis.call('HDEL', KEYS[2], ARGV[1])
+
+-- Return success
+return 1
+`;
 
 module.exports = {
-    PURCHASE_SCRIPT
+  PURCHASE_SCRIPT,
+  ROLLBACK_SCRIPT,
 };

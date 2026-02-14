@@ -1,0 +1,192 @@
+{
+  "info": {
+    "name": "Flash Sale API Tests",
+    "description": "Collection for testing Flash Sale API endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "flashSaleId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userIdentifier",
+      "value": "test@example.com",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Create Flash Sale",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"productName\": \"iPhone 16 Pro Max 256GB\",\n  \"totalStock\": 100,\n  \"startTime\": \"{{$isoTimestamp}}\",\n  \"endTime\": \"2026-12-31T23:59:59.000Z\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/flash-sale/create",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "flash-sale", "create"]
+        },
+        "description": "Create a new flash sale with product data, stock, and start/end time"
+      },
+      "response": []
+    },
+    {
+      "name": "2. Get Flash Sale Status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/flash-sale/status",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "flash-sale", "status"]
+        },
+        "description": "Get current flash sale status (upcoming, active, sold_out, ended)"
+      },
+      "response": []
+    },
+    {
+      "name": "3. Purchase Item",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userIdentifier\": \"{{userIdentifier}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/flash-sale/purchase",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "flash-sale", "purchase"]
+        },
+        "description": "User purchases a flash sale item"
+      },
+      "response": []
+    },
+    {
+      "name": "4. Check User Purchase",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/flash-sale/check-purchase/{{userIdentifier}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "flash-sale", "check-purchase", "{{userIdentifier}}"]
+        },
+        "description": "Check if user has made a purchase"
+      },
+      "response": []
+    },
+    {
+      "name": "Error Test - Missing Fields",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"productName\": \"Test Product\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/flash-sale/create",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "flash-sale", "create"]
+        },
+        "description": "Test error handling for missing required fields"
+      },
+      "response": []
+    },
+    {
+      "name": "Error Test - Negative Stock",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"productName\": \"Test Product\",\n  \"totalStock\": -10,\n  \"startTime\": \"{{$isoTimestamp}}\",\n  \"endTime\": \"2026-12-31T23:59:59.000Z\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/flash-sale/create",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "flash-sale", "create"]
+        },
+        "description": "Test error handling for negative stock"
+      },
+      "response": []
+    },
+    {
+      "name": "Error Test - Invalid Time Range",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"productName\": \"Test Product\",\n  \"totalStock\": 100,\n  \"startTime\": \"2026-12-31T23:59:59.000Z\",\n  \"endTime\": \"{{$isoTimestamp}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/flash-sale/create",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "flash-sale", "create"]
+        },
+        "description": "Test error handling for start time after end time"
+      },
+      "response": []
+    },
+    {
+      "name": "Error Test - Missing User Identifier",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/flash-sale/purchase",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "flash-sale", "purchase"]
+        },
+        "description": "Test error handling for purchase without user identifier"
+      },
+      "response": []
+    }
+  ]
+}

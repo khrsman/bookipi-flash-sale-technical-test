@@ -16,7 +16,7 @@ exports.validateCreateFlashSale = (req, res, next) => {
   if (missingFields.length > 0) {
     return res.status(400).json({
       success: false,
-      message: `Missing required fields: ${missingFields.join(', ')}`
+      message: `Missing required fields: ${missingFields.join(', ')}`,
     });
   }
 
@@ -24,7 +24,7 @@ exports.validateCreateFlashSale = (req, res, next) => {
   if (typeof totalStock !== 'number' || totalStock <= 0) {
     return res.status(400).json({
       success: false,
-      message: 'Total stock must be a positive number'
+      message: 'Total stock must be a positive number',
     });
   }
 
@@ -35,7 +35,7 @@ exports.validateCreateFlashSale = (req, res, next) => {
   if (start >= end) {
     return res.status(400).json({
       success: false,
-      message: 'Start time must be before end time'
+      message: 'Start time must be before end time',
     });
   }
 
@@ -52,7 +52,7 @@ exports.validateUserIdentifier = (req, res, next) => {
   if (!userIdentifier || userIdentifier.trim() === '') {
     return res.status(400).json({
       success: false,
-      message: 'User identifier is required'
+      message: 'User identifier is required',
     });
   }
 
@@ -60,7 +60,7 @@ exports.validateUserIdentifier = (req, res, next) => {
   if (userIdentifier.trim().length < 3) {
     return res.status(400).json({
       success: false,
-      message: 'User identifier must be at least 3 characters'
+      message: 'User identifier must be at least 3 characters',
     });
   }
 
@@ -69,7 +69,7 @@ exports.validateUserIdentifier = (req, res, next) => {
   if (!validFormat) {
     return res.status(400).json({
       success: false,
-      message: 'Invalid user identifier format'
+      message: 'Invalid user identifier format',
     });
   }
 
@@ -85,7 +85,7 @@ exports.validateFlashSaleId = (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return res.status(400).json({
       success: false,
-      message: 'Invalid flash sale ID format'
+      message: 'Invalid flash sale ID format',
     });
   }
 

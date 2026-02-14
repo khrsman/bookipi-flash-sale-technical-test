@@ -10,8 +10,8 @@ async function connectRedis() {
     redisClient = redis.createClient({
       socket: {
         host: process.env.REDIS_HOST || 'localhost',
-        port: process.env.REDIS_PORT || 6379
-      }
+        port: process.env.REDIS_PORT || 6379,
+      },
     });
 
     redisClient.on('error', (err) => {
@@ -27,6 +27,24 @@ async function connectRedis() {
 }
 
 /**
+ * Initialize Redis (for testing purposes)
+ * Alias for connectRedis to maintain consistency
+ */
+async function initRedis() {
+  return connectRedis();
+}
+
+/**
+ * Close Redis connection (for testing cleanup)
+ */
+async function closeRedis() {
+  if (redisClient && redisClient.isOpen) {
+    await redisClient.quit();
+    console.log('✅ Redis connection closed');
+  }
+}
+
+/**
  * Get Redis client instance
  */
 function getRedisClient() {
@@ -35,5 +53,7 @@ function getRedisClient() {
 
 module.exports = {
   connectRedis,
-  getRedisClient
+  initRedis,
+  closeRedis,
+  getRedisClient,
 };
