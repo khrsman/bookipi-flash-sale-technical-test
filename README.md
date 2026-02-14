@@ -32,13 +32,11 @@ This flash sale system implements a **dual-layer protection architecture** desig
 - **Zero Overselling Guarantee:** Dual validation ensures stock never goes negative
 - **Sub-100ms Response Time:** 95th percentile at 23.8ms under peak load
 
-**📐 Complete System Design Diagrams:**
-
-Visual architecture diagrams are available in the repository as Excalidraw files:
+**Visual architecture diagrams are available in the repository as Excalidraw files:**
 
 - `systemDesign.excalidraw` - Complete system design and architecture
 
-**View Online:** [Open in Excalidraw](https://excalidraw.com/#json=owohsa05k2v6-YU_vupYO,BgQl8d8_4kB0dcdtK6MQ9Q)
+**View The System Diagram:** [Open in Excalidraw](https://excalidraw.com/#json=owohsa05k2v6-YU_vupYO,BgQl8d8_4kB0dcdtK6MQ9Q)
 
 <img src="SystemDesign.png" alt="System Design" width="600">
 
