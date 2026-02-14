@@ -1,0 +1,129 @@
+config:
+  target: 'http://localhost:5000'
+  # Configuration optimized for high-load testing
+  # Simulates 10,000 users in first 60 seconds with realistic behavior
+  phases:
+    # Phase 1: EXTREME PEAK - First 60 seconds (10,000 users)
+    # This simulates the brutal first minute of flash sale
+    - duration: 60
+      arrivalRate: 167
+      name: 'PEAK TRAFFIC - First 60s (10K users)'
+      maxVusers: 5000 # Limit concurrent VUs to prevent client overload
+
+    # Phase 2: High sustained load - Next 2 minutes
+    # After initial rush, still high traffic as word spreads
+    - duration: 120
+      arrivalRate: 100
+      name: 'Sustained High Load - 300 req/sec'
+
+    # Phase 3: Moderate load - Next 3 minutes
+    # Traffic normalizes as stock depletes
+    - duration: 180
+      arrivalRate: 50
+      name: 'Moderate Load - 150 req/sec'
+
+    # Phase 4: Cool down - Final minute
+    # Stragglers checking status/sold out
+    - duration: 60
+      arrivalRate: 25
+      name: 'Cool Down - 75 req/sec'
+
+  # Performance settings for high-load testing
+  http:
+    timeout: 10 # 10 second timeout
+    pool: 50 # Connection pool size
+
+  # Enable all plugins for detailed metrics
+  plugins:
+    expect: {}
+    metrics-by-endpoint: {}
+
+  processor: './processors.js'
+
+  # Environment variables
+  variables:
+    stockLimit: 200 # Total stock available
+
+scenarios:
+  # Main Scenario: Realistic Flash Sale User Behavior
+  # Each user performs 3 requests total: 2 status checks + 1 purchase attempt
+  # This generates exactly 500 req/sec (167 users/sec × 3 req/user = 501 req/sec)
+  - name: 'Flash Sale User Flow'
+    flow:
+      # Step 1: Initial status check (user sees flash sale)
+      - get:
+          url: '/api/flash-sale/status'
+          headers:
+            Content-Type: 'application/json'
+          capture:
+            - json: '$.data.status'
+              as: 'initialStatus'
+            - json: '$.data.stockRemaining'
+              as: 'initialStock'
+          expect:
+            - statusCode: 200
+            - contentType: json
+            - hasProperty: data
+          afterResponse: 'logStatusCheck'
+
+      # Small think time (user reads the status)
+      - think: 0.1
+
+      # Step 2: Second status check (user confirms before buying)
+      - get:
+          url: '/api/flash-sale/status'
+          headers:
+            Content-Type: 'application/json'
+          capture:
+            - json: '$.data.status'
+              as: 'preCheckStatus'
+            - json: '$.data.stockRemaining'
+              as: 'preCheckStock'
+          expect:
+            - statusCode: 200
+            - contentType: json
+            - hasProperty: data
+          afterResponse: 'logStatusCheck'
+
+      # Small think time (user decides to purchase)
+      - think: 0.1
+
+      # Step 3: Purchase attempt
+      - post:
+          url: '/api/flash-sale/purchase'
+          headers:
+            Content-Type: 'application/json'
+          json:
+            userIdentifier: 'user_{{ $randomNumber() }}_{{ $randomString() }}@test.com'
+          expect:
+            - statusCode: 200
+            - contentType: json
+          capture:
+            - json: '$.success'
+              as: 'purchaseSuccess'
+            - json: '$.message'
+              as: 'purchaseMessage'
+          afterResponse: 'logPurchaseAttempt'
+
+# Expected Results for Success:
+# ================================
+# First 60 seconds (PEAK LOAD):
+# - Total arrivals: 167 users/sec × 60s = 10,020 users
+# - Requests per user: 3 (2 status + 1 purchase)
+# - Total requests: ~30,000 requests
+# - Request breakdown:
+#   • Status requests: 20,000 (10,000 users × 2) → 333 reads/sec
+#   • Purchase requests: 10,000 (10,000 users × 1) → 167 writes/sec
+#   • Total peak load: 30,000 ≈ 500 req/sec ✓
+#
+# Full Test Duration (7 minutes):
+# - Total requests: ~60,000+ (all phases combined)
+# - Highest load: First 60 seconds (500 req/sec)
+#
+# Success Criteria:
+# ✓ No overselling: Exactly 200 successful purchases (atomic operations)
+# ✓ Response times: p95 < 150ms, p99 < 300ms
+# ✓ Error rate: < 5% (excluding "sold out" responses which are expected)
+# ✓ All 200 stock depleted atomically without race conditions
+# ✓ No duplicate purchases per userIdentifier (unique constraint)
+# ✓ Data consistency: Redis count matches MongoDB documents

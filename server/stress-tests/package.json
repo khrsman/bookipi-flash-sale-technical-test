@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "description": "Load testing for flash sale system",
   "scripts": {
-    "test": "artillery run artillery.yml",
-    "test:quick": "artillery quick --duration 60 --rate 10 http://localhost:5000/health",
-    "test:report": "artillery run artillery.yml --output report.json && artillery report report.json"
+    "test": "artillery run artillery-extreme.yml",
+    "test:report": "artillery run artillery-extreme.yml --output report.json && artillery report report.json --output report.html",
+    "test:extreme": "artillery run artillery-extreme.yml --output report-extreme.json",
+    "test:extreme:report": "artillery run artillery-extreme.yml --output report-extreme.json && artillery report report-extreme.json --output report-extreme.html"
   },
   "devDependencies": {
     "artillery": "^2.0.0"
