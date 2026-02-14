@@ -172,7 +172,7 @@ Run infra in Docker, apps locally for faster iteration.
 ./docker-manager.sh start-infra
 
 # 2. Install dependencies server and client (from root)
-npm install:all
+npm run install:all
 
 # 3. Start dev server and client (from root)
 npm run dev
@@ -227,8 +227,12 @@ Admin interface for testing / adding flash sale product:
 Backend service and controller tests:
 
 ```bash
-cd server
-npm test
+# If  you running using Option 2 or option 3.
+cd server  && npm test
+
+# If you running this app using option 1
+cd server && npm install && npm test
+
 ```
 
 **Coverage:**
