@@ -68,7 +68,8 @@ case "$1" in
         
         echo ""
         echo "Infrastructure services started!"
-        echo "Now you can run: npm run dev"
+        echo "Now you can run: npm run install:all && npm run dev"
+        echo "Note that the first build may takes 5-10 minutes. Environment variables are pre-configured"
         echo ""
         ;;
     
