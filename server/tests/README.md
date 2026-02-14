@@ -14,11 +14,27 @@ server/tests/
 
 ## Setup
 
-Dependencies should already be installed, but if needed:
+### Install Dependencies
+
+From project root (recommended):
+
+```bash
+# Installs all dependencies for client and server (from root)
+npm install
+```
 
 ```bash
 cd server
-npm install --save-dev jest supertest mongodb-memory-server
+npm install
+```
+
+### Start Infrastructure
+
+The unit tests use in-memory MongoDB, so you don't need to start MongoDB. But if you're running integration tests or the API:
+
+```bash
+# From project root - start MongoDB & Redis
+./docker-manager.sh start-infra
 ```
 
 The package.json includes these test scripts:
@@ -37,14 +53,16 @@ The package.json includes these test scripts:
 ## Running Tests
 
 Run all tests:
+
 ```bash
 npm test
 ```
 
 You should see something like:
+
 ```
 PASS  tests/validation.test.js
-PASS  tests/service.test.js  
+PASS  tests/service.test.js
 PASS  tests/flashSale.test.js
 
 Test Suites: 3 passed, 3 total
@@ -52,11 +70,13 @@ Tests:       55 passed, 55 total
 ```
 
 Check code coverage:
+
 ```bash
 npm run test:coverage
 ```
 
 Coverage report shows:
+
 ```
 ------------------------|---------|----------|---------|---------|
 File                    | % Stmts | % Branch | % Funcs | % Lines |
@@ -69,6 +89,7 @@ models/                 |     100 |      100 |     100 |     100 |
 ```
 
 Run specific test files:
+
 ```bash
 npm test -- flashSale.test.js
 npm test -- service.test.js
@@ -76,11 +97,13 @@ npm test -- validation.test.js
 ```
 
 Watch mode for development (tests re-run on file changes):
+
 ```bash
 npm run test:watch
 ```
 
 Verbose output (shows each test case):
+
 ```bash
 npm run test:verbose
 ```
@@ -90,16 +113,19 @@ npm run test:verbose
 ### API Endpoints (flashSale.test.js)
 
 **POST /api/flash-sale/create**
+
 - Creating a flash sale with valid data
 - Validation errors (missing fields, negative stock, etc.)
 - Time validation (start before end)
 
 **GET /api/flash-sale/status**
+
 - Returns correct status (upcoming, active, sold_out, ended)
 - Real-time stock from Redis
 - Handles missing flash sale
 
 **POST /api/flash-sale/purchase**
+
 - Successful purchase flow
 - Duplicate purchase prevention
 - Time checks (not started, already ended)
@@ -107,12 +133,14 @@ npm run test:verbose
 - Concurrent purchases (race conditions)
 
 **GET /api/flash-sale/check-purchase/:userIdentifier**
+
 - Returns purchase history for user
 - Handles various identifier formats
 
 ### Service Layer (service.test.js)
 
 Tests for FlashSaleService methods:
+
 - Flash sale creation with Redis initialization
 - Status calculation based on time and stock
 - Purchase logic with atomic operations
@@ -121,6 +149,7 @@ Tests for FlashSaleService methods:
 ### Validation (validation.test.js)
 
 Input validation tests:
+
 - Required field checks
 - Data type validation
 - Business rule enforcement
@@ -134,25 +163,26 @@ The `sampleData.js` file has pre-made test data you can use:
 const samples = require('./tests/sampleData');
 
 // Standard flash sale
-samples.createFlashSale.standard
+samples.createFlashSale.standard;
 
 // Starts immediately
-samples.createFlashSale.immediate
+samples.createFlashSale.immediate;
 
 // Limited stock (5 items)
-samples.createFlashSale.limited
+samples.createFlashSale.limited;
 
 // Different user identifiers
-samples.purchase.email
-samples.purchase.username
+samples.purchase.email;
+samples.purchase.username;
 
 // Invalid data for error testing
-samples.invalid.createFlashSale.negativeStock
+samples.invalid.createFlashSale.negativeStock;
 ```
 
 ## Manual Testing with cURL
 
 ### Create a Flash Sale
+
 ```bash
 curl -X POST http://localhost:3000/api/flash-sale/create \
   -H "Content-Type: application/json" \
@@ -165,6 +195,7 @@ curl -X POST http://localhost:3000/api/flash-sale/create \
 ```
 
 Response:
+
 ```json
 {
   "success": true,
@@ -179,11 +210,13 @@ Response:
 ```
 
 ### Get Status
+
 ```bash
 curl http://localhost:3000/api/flash-sale/status
 ```
 
 ### Make a Purchase
+
 ```bash
 curl -X POST http://localhost:3000/api/flash-sale/purchase \
   -H "Content-Type: application/json" \
@@ -191,16 +224,19 @@ curl -X POST http://localhost:3000/api/flash-sale/purchase \
 ```
 
 Possible responses:
+
 - Success: `"Purchase successful!"`
 - Already purchased: `"You have already purchased this item"`
 - Sold out: `"Item sold out"`
 
 ### Check Purchase Status
+
 ```bash
 curl http://localhost:3000/api/flash-sale/check-purchase/john@example.com
 ```
 
 Response shows if user has purchased and when:
+
 ```json
 {
   "success": true,
@@ -216,6 +252,7 @@ Response shows if user has purchased and when:
 Import the included `Flash_Sale_API.postman_collection.json` file into Postman.
 
 Set up environment variables:
+
 ```json
 {
   "baseUrl": "http://localhost:3000",
@@ -228,6 +265,7 @@ Set up environment variables:
 ```
 
 The collection includes:
+
 - All 4 main endpoints
 - Error test cases (missing fields, negative stock, invalid time range)
 
@@ -240,6 +278,7 @@ npm install -g artillery
 ```
 
 Create `load-test.yml`:
+
 ```yaml
 config:
   target: 'http://localhost:3000'
@@ -247,15 +286,16 @@ config:
     - duration: 10
       arrivalRate: 50
 scenarios:
-  - name: "Purchase attempts"
+  - name: 'Purchase attempts'
     flow:
       - post:
-          url: "/api/flash-sale/purchase"
+          url: '/api/flash-sale/purchase'
           json:
-            userIdentifier: "user_{{ $randomString() }}"
+            userIdentifier: 'user_{{ $randomString() }}'
 ```
 
 Run it:
+
 ```bash
 artillery run load-test.yml
 ```
@@ -267,6 +307,7 @@ This simulates 50 users/second trying to purchase for 10 seconds.
 **Tests timing out**
 
 Increase the timeout (already set to 30s in package.json):
+
 ```json
 {
   "jest": {
@@ -278,6 +319,7 @@ Increase the timeout (already set to 30s in package.json):
 **MongoDB connection errors**
 
 Make sure mongodb-memory-server is installed:
+
 ```bash
 npm install --save-dev mongodb-memory-server
 ```
@@ -287,6 +329,7 @@ Note: First run downloads MongoDB binaries, so it'll be slower.
 **Redis connection errors**
 
 Redis must be running for tests to work:
+
 ```bash
 # Check if Redis is up
 redis-cli ping
@@ -302,16 +345,19 @@ The test scripts already include `--detectOpenHandles --forceExit` flags. If you
 ## Tips
 
 Run tests before committing:
+
 ```bash
 npm test && git commit -m "your message"
 ```
 
 Keep coverage above 80% - check with:
+
 ```bash
 npm run test:coverage
 ```
 
 Use watch mode during development - tests auto-run when you save files:
+
 ```bash
 npm run test:watch
 ```
@@ -328,29 +374,29 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - uses: actions/checkout@v2
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v2
-      with:
-        node-version: '18'
-    
-    - name: Install dependencies
-      run: |
-        cd server
-        npm install
-    
-    - name: Run tests
-      run: |
-        cd server
-        npm test
-    
-    - name: Coverage report
-      run: |
-        cd server
-        npm run test:coverage
+      - uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: |
+          cd server
+          npm install
+
+      - name: Run tests
+        run: |
+          cd server
+          npm test
+
+      - name: Coverage report
+        run: |
+          cd server
+          npm run test:coverage
 ```
 
 ## Notes

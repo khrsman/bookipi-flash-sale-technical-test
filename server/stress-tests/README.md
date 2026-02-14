@@ -2,7 +2,10 @@
 
 ## What's this?
 
-Artillery config for load testing the flash sale backend. Run these tests to see how the system handles traffic spikes and concurrent purchases.
+Artillery config for load testing the flash sale backend. Two test scenarios available:
+
+- **Moderate Test** (`npm run test`): 500 req/sec peak, suitable for initial validation
+- **Extreme Test** (`npm run test:extreme`): 1,000 req/sec peak, stress test for breaking point analysis
 
 ## Test Setup
 
@@ -12,64 +15,65 @@ Three scenarios running in parallel:
 - **Attempt Purchase** (50%): `POST /api/flash-sale/purchase`
 - **Check Purchase** (10%): `GET /api/flash-sale/check-purchase/user_test@example.com`
 
-Load ramps up over 7 minutes:
+**Moderate Test** load profile (7 minutes):
 
-| Phase       | Duration | Users/sec |
-| ----------- | -------- | --------- |
-| Warm up     | 60s      | 10        |
-| Ramp up     | 120s     | 50        |
-| Peak load   | 180s     | 100       |
-| Stress test | 60s      | 200       |
+| Phase     | Duration | Users/sec |
+| --------- | -------- | --------- |
+| Warm up   | 60s      | 50        |
+| Ramp up   | 60s      | 200       |
+| Peak load | 60s      | 500       |
+| Cool down | 240s     | 100       |
 
-Total: ~7 minutes, ~42k requests
+Total: ~97k requests, targets 10,000 concurrent users at peak
 
 ## Quick Start
-
-Install dependencies:
-
-```bash
-cd stress-tests
-npm install
-```
 
 Start the services:
 
 ```bash
-# Start MongoDB & Redis
-docker compose -f docker/docker-compose-redis-mongo.yml up -d
+# From project root - start MongoDB & Redis
+./docker-manager.sh start-infra
 
-# Start backend
-cd server
+# Start services (from root)
 npm run dev
+```
+
+Install dependencies:
+
+```bash
+# Install stress test dependencies
+cd server/stress-tests && npm install
 ```
 
 Create a test flash sale:
 
 ```bash
+# Modify the start and end time as needed
 curl -X POST http://localhost:5000/api/flash-sale/create \
   -H "Content-Type: application/json" \
   -d '{
     "productName": "Stress Test Product",
-    "totalStock": 100,
-    "startTime": "2026-02-13T00:00:00Z",
-    "endTime": "2026-02-20T23:59:59Z"
+    "totalStock": 200,
+    "startTime": "2026-02-14T00:00:00Z",
+    "endTime": "2026-02-14T23:59:59Z"
   }'
 ```
 
 Run the test:
 
 ```bash
-npm test
+# Run moderate test (recommended)
+npm run test
+
+# Or run extreme test
+npm run test:extreme
 ```
 
-That's it. Artillery will hit the endpoints for 7 minutes and print results at the end.
+That's it. Artillery will run for 7 minutes and print results at the end.
 
 Other commands:
 
 ```bash
-# Quick 60s test
-npm run test:quick
-
 # Generate HTML report
 npm run test:report
 
@@ -79,22 +83,28 @@ artillery quick --duration 120 --rate 50 http://localhost:5000/api/flash-sale/st
 
 ## What to look for
 
-Good results:
+**Target Performance (Feb 14, 2026 results):**
 
-- Median response time < 50ms
-- p95 < 100ms
-- p99 < 200ms
-- Success rate > 95%
+- Response Time (median): < 5ms
+- Response Time (p95): < 150ms
+- Response Time (p99): < 300ms
+- Success Rate: 100%
 - No overselling
 
-Example:
+**Actual Results (Moderate Test):**
 
 ```
-http.codes.200: 42000
-http.response_time:
-  median: 12
-  p95: 35
-  p99: 85
+Load: 10,000 concurrent users, 500 req/sec peak
+Requests: 97,560 total
+Success Rate: 100%
+
+Response Times:
+  median: 3ms
+  p95: 23.8ms
+  p99: 61ms
+
+Data Integrity: 200/200 purchases recorded
+Overselling: None detected
 ```
 
 If you see lots of errors or slow responses, something's wrong. Check backend logs, database, or test config.

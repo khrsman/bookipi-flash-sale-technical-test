@@ -453,22 +453,24 @@ Load Generator:
 
 ### Prerequisites
 
+Start the services:
+
 ```bash
-# 1. Start infrastructure
-docker-compose up -d
+# From project root - start MongoDB & Redis
+./docker-manager.sh start-infra
 
-# 2. Wait for services to be healthy
-docker ps
-
-# 3. Install dependencies
-cd server && npm install
-cd stress-tests && npm install
-
-# 4. Start API server
-npm start
+# Start services (from root)
+npm run dev
 ```
 
-### Create Flash Sale for Testing
+Install dependencies:
+
+```bash
+# Install stress test dependencies
+cd server/stress-tests && npm install
+```
+
+Create Flash Sale for Testing
 
 ```bash
 # Reset any existing data
@@ -478,10 +480,10 @@ curl -X POST http://localhost:5000/api/admin/reset-all
 curl -X POST http://localhost:5000/api/flash-sale/create \
   -H "Content-Type: application/json" \
   -d '{
-    "productName": "Load Test Product",
+    "productName": "Stress Test Product",
     "totalStock": 200,
-    "startTime": "2026-02-14T03:00:00Z",
-    "endTime": "2026-02-14T16:00:00Z"
+    "startTime": "2026-02-14T00:00:00Z",
+    "endTime": "2026-02-14T23:59:59Z"
   }'
 
 # Verify it's active
@@ -506,17 +508,17 @@ curl http://localhost:5000/api/admin/flash-sales
 
 ### Interpreting Results
 
-**Success Criteria:**
+**Test passes when:**
 
-1. ✅ All HTTP codes should be 200
-2. ✅ p95 response time < 150ms (target)
-3. ✅ p99 response time < 300ms (target)
-4. ✅ Zero failed virtual users
-5. ✅ Exactly 200 purchases recorded
-6. ✅ Stock remaining = 0
-7. ✅ No duplicate purchases
+1. All HTTP codes are 200
+2. p95 response time < 150ms
+3. p99 response time < 300ms
+4. Zero failed virtual users
+5. Exactly 200 purchases recorded
+6. Stock remaining = 0
+7. No duplicate purchases
 
-**Example Success Output:**
+**Example output:**
 
 ```
 http.codes.200: 97560
