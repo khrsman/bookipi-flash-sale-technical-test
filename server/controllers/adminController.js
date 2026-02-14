@@ -9,10 +9,42 @@ exports.listFlashSales = async (req, res) => {
     const flashSales = await FlashSale.find({}).sort({ createdAt: -1 });
     const purchaseCount = await Purchase.countDocuments({});
 
+    // Get Redis client for real-time stock
+    const redisClient = getRedisClient();
+
+    // Transform flash sales to include real-time stock from Redis
+    const transformedFlashSales = await Promise.all(
+      flashSales.map(async (sale) => {
+        let stockRemaining = sale.remainingStock;
+
+        // Try to get real-time stock from Redis
+        if (redisClient && redisClient.isOpen) {
+          const stockKey = `flash_sale:${sale._id}:stock`;
+          const redisStock = await redisClient.get(stockKey);
+          if (redisStock !== null) {
+            stockRemaining = parseInt(redisStock);
+          }
+        }
+
+        return {
+          _id: sale._id,
+          id: sale._id.toString(),
+          productName: sale.productName,
+          totalStock: sale.totalStock,
+          stockRemaining: stockRemaining,
+          startTime: sale.startTime,
+          endTime: sale.endTime,
+          status: sale.status,
+          createdAt: sale.createdAt,
+          updatedAt: sale.updatedAt,
+        };
+      })
+    );
+
     res.json({
       success: true,
       data: {
-        flashSales,
+        flashSales: transformedFlashSales,
         totalFlashSales: flashSales.length,
         totalPurchases: purchaseCount,
       },
