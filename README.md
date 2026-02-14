@@ -163,7 +163,7 @@ Everything runs in containers - zero local dependencies needed.
 
 **Note:** First build takes 5-10 minutes. Environment variables are pre-configured.
 
-### Option 2: Local Development
+### Option 2: Local Development preconfigured package json
 
 Run infra in Docker, apps locally for faster iteration.
 
@@ -172,7 +172,35 @@ Run infra in Docker, apps locally for faster iteration.
 ./docker-manager.sh start-infra
 
 # 2. Install dependencies server and client (from root)
-npm install
+npm install:all
+
+# 3. Start dev server and client (from root)
+npm run dev
+```
+
+### Option 3: Manually Run Local Development
+
+Server
+
+```bash
+# 1. Start MongoDB and Redis
+./docker-manager.sh start-infra
+
+# 2. Install dependencies server and client (from root)
+cd server && npm install
+
+# 3. Start dev server and client (from root)
+npm run dev
+```
+
+Client
+
+```bash
+# 1. Start MongoDB and Redis
+./docker-manager.sh start-infra
+
+# 2. Install dependencies server and client (from root)
+cd client && npm install
 
 # 3. Start dev server and client (from root)
 npm run dev
