@@ -388,7 +388,7 @@ export default function AdminPage() {
                         <div className="flex justify-between">
                           <span className="text-gray-600">Stock:</span>
                           <span className="font-medium text-gray-800">
-                            {sale.stockRemaining} / {sale.totalStock}
+                            {sale.stockRemaining ?? sale.totalStock} / {sale.totalStock}
                           </span>
                         </div>
 
@@ -415,7 +415,8 @@ export default function AdminPage() {
                             style={{
                               width: `${
                                 sale.totalStock > 0
-                                  ? ((sale.totalStock - sale.stockRemaining) / sale.totalStock) *
+                                  ? ((sale.totalStock - (sale.stockRemaining ?? sale.totalStock)) /
+                                      sale.totalStock) *
                                     100
                                   : 0
                               }%`,
@@ -425,7 +426,9 @@ export default function AdminPage() {
                         <div className="text-xs text-gray-500 mt-1">
                           {sale.totalStock > 0
                             ? Math.round(
-                                ((sale.totalStock - sale.stockRemaining) / sale.totalStock) * 100
+                                ((sale.totalStock - (sale.stockRemaining ?? sale.totalStock)) /
+                                  sale.totalStock) *
+                                  100
                               )
                             : 0}
                           % sold
