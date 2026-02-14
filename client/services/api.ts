@@ -49,7 +49,7 @@ export interface FlashSaleStatus {
   _id?: string;
   productName: string;
   status: 'upcoming' | 'active' | 'ended' | 'sold_out';
-  remainingStock: number;
+  stockRemaining: number;
   totalStock: number;
   startTime: string;
   endTime: string;
